@@ -1,63 +1,68 @@
-# GAME_PROGRAM-EX--5
-## Making Player to collect the ammo and increase the bullet spawn count.
+# GAME_PROGRAM-EXP-6
+# AI Random Roam with Chase - Unreal Engine
+
 ##  Aim
-To implement a gameplay feature where the player collects ammo pickups in the game world. Upon collecting ammo, the player's ammo count increases, enabling more bullet spawns (shots).
+To create an AI character in Unreal Engine that roams randomly within a NavMesh area and chases the player when they come within a certain range, using Behavior Trees, Blackboard, and AI Perception.
 
----
+##  Procedure
 
-## Procedure
+1. **Setup Navigation**
+   - Add a `NavMeshBoundsVolume` to your level and scale it to cover the roamable area.
+   - Press **P** to confirm the green nav area is visible (indicating navigable space).
 
-### 1. Setup Player Character
+2. **Create AI Character**
+   - Create a Blueprint character (e.g., `BP_AIEnemy`) with a skeletal mesh and AIController class.
+   - Create an AI Controller Blueprint (e.g., `BP_AIController`) and assign it to the character.
 
-- Open your `PlayerCharacter` Blueprint.s
-- Add a new **Integer** variable named `AmmoCount`.
-- Set an initial default value (e.g., `AmmoCount = 10`).
-- Ensure you have a shooting mechanism in place that uses `AmmoCount` to determine if a bullet can be fired.
+3. **Enable AI Perception**
+   - In `BP_AIController`, add an `AIPerception` component.
+   - Configure a **Sight** sense (set detection range, lose sight range, peripheral vision angle).
+   - Bind `OnPerceptionUpdated` to update a blackboard value (e.g., `CanSeePlayer` and `PlayerActor`).
 
-### 2. Create Ammo Pickup Blueprint
+4. **Set Up Blackboard**
+   - Create a Blackboard with the following keys:
+     - `TargetLocation` (Vector)
+     - `PlayerActor` (Object)
+     - `CanSeePlayer` (Bool)
 
-- Go to the Content Browser → Right-click → **Blueprint Class** → Select **Actor** → Name it `BP_AmmoPickup`.
-- Add components:
-  - **Static Mesh**: Representing the ammo (e.g., a bullet or crate).
-  - **Sphere Collision**: To detect overlap with the player.
-- In the Event Graph of `BP_AmmoPickup`:
-  - Use `OnComponentBeginOverlap` on the Sphere Collision.
-  - Cast to `PlayerCharacter`.
-  - Increase the player’s `AmmoCount` (e.g., `AmmoCount += 5`).
-  - Optionally, play a pickup sound or effect.
-  - Destroy the ammo pickup actor.
+5. **Create Behavior Tree (BT_AI)**
+   - Structure it like this:
 
-### 3. Update Shooting Logic (Optional)
+     ```
+     Root
+     └── Selector
+         ├── Sequence (Chase Player)
+         │   ├── Blackboard Check: CanSeePlayer == true
+         │   └── Move To: PlayerActor
+         └── Sequence (Random Roam)
+             ├── Task: Find Random Location → TargetLocation
+             └── Move To: TargetLocation
+     ```
 
-- In your player’s shooting logic:
-  - Before spawning a bullet, check `if AmmoCount > 0`.
-  - If true:
-    - Spawn bullet.
-    - Decrease `AmmoCount` by 1.
+6. **Custom Task: Find Random Location**
+   - Create a new `BTTask_BlueprintBase` to get a random reachable point using:
+     ```cpp
+     UNavigationSystemV1::GetRandomReachablePointInRadius()
+     ```
+   - Set the result to the `TargetLocation` blackboard key.
 
-### 4. Place Ammo in the World
-
-- Drag instances of `BP_AmmoPickup` into your level from the Content Browser.
-- Adjust position, mesh, and pickup range as needed.
-
----
+7. **Test the AI**
+   - Add a player character to the level.
+   - Place the AI enemy in the map and assign its controller and behavior tree.
+   - Press **Play**: the AI should roam when the player is far and chase the player when within sight.
+  
 
 ## Output
-
-![Screenshot 2025-05-14 140722](https://github.com/user-attachments/assets/ad7eefea-575c-44ae-9eca-6e9a623a8ef4)
-
-![Screenshot 2025-05-14 140736](https://github.com/user-attachments/assets/e82640a3-06c3-48e0-9abd-11a2e60640ba)
+SANJAY
+![Screenshot 2025-05-15 133109](https://github.com/user-attachments/assets/8cc1b432-1809-4fb2-b82c-842d16b2f651)
 
 
-![image](https://github.com/user-attachments/assets/ca2adaf2-d5b2-42fc-a40e-a81d6d69d965)
-
-![image](https://github.com/user-attachments/assets/e28cfc27-f127-40cf-94ba-e95d5fa1901f)
+![image](https://github.com/user-attachments/assets/aac9fada-353e-4369-a7a1-8037059117b9)
 
 
-##  Result
 
-- The player starts with a limited number of bullets.
-- When the player overlaps with an ammo pickup:
-  - The ammo is collected.
-  - The player's `AmmoCount` increases.
-- The player can now fire additional bullets based on the updated ammo count.
+**![image](https://github.com/user-attachments/assets/0017652a-93f4-4168-b375-6389bb48b189)
+**
+
+## Result
+The AI character roams randomly within a defined area. When the player enters its sight range, the AI stops roaming and begins to chase the player until the player is out of sight, after which it resumes roaming.
